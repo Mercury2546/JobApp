@@ -107,8 +107,8 @@ def render_dashboard_overview():
             | Phase | Module | Status |
             | :--- | :--- | :--- |
             | **Phase 1** | **Project Architecture & Setup** | 🟢 **Complete** |
-            | **Phase 2** | **Application Tracker (CRUD & SQLite)** | 🟡 **Up Next** |
-            | **Phase 3** | **Resume Analyzer (AI Critique & ATS)** | ⚪ Planned |
+            | **Phase 2** | **Application Tracker (CRUD & SQLite)** | 🟢 **Complete** |
+            | **Phase 3** | **Resume Analyzer (AI Critique & ATS)** | 🟡 **Up Next** |
             | **Phase 4** | **Job Hunter (Search & Import)** | ⚪ Planned |
             | **Phase 5** | **Job Matching (Compatibility Fit)** | ⚪ Planned |
             | **Phase 6** | **Interview Coach (STAR Feedback)** | ⚪ Planned |
