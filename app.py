@@ -109,8 +109,8 @@ def render_dashboard_overview():
             | **Phase 1** | **โครงสร้างโปรเจกต์และการตั้งค่าระบบ (Setup & Architecture)** | 🟢 **เสร็จสมบูรณ์** |
             | **Phase 2** | **ระบบติดตามการสมัครงาน (Application Tracker - CRUD & SQLite)** | 🟢 **เสร็จสมบูรณ์** |
             | **Phase 3** | **ระบบวิเคราะห์เรซูเม่ด้วย AI & รองรับ PDF (Resume Analyzer & ATS)** | 🟢 **เสร็จสมบูรณ์** |
-            | **Phase 4** | **ระบบค้นหาตำแหน่งงานอัจฉริยะ (Job Hunter & Query Builder)** | 🟡 **ลำดับถัดไป** |
-            | **Phase 5** | **ระบบจับคู่งานและทักษะ (Job Matching & Fit Score)** | ⚪ วางแผนแล้ว |
+            | **Phase 4** | **ระบบค้นหาตำแหน่งงานอัจฉริยะ (Job Hunter & Query Builder)** | 🟢 **เสร็จสมบูรณ์** |
+            | **Phase 5** | **ระบบจับคู่งานและทักษะ (Job Matching & Fit Score)** | 🟡 **ลำดับถัดไป** |
             | **Phase 6** | **โค้ชจำลองการสัมภาษณ์งาน (Interview Coach & STAR Feedback)** | ⚪ วางแผนแล้ว |
             | **Phase 7** | **แผนที่เส้นทางสายอาชีพ (Career Planner & Roadmaps)** | ⚪ วางแผนแล้ว |
             """
