@@ -140,5 +140,5 @@ Open your browser at `http://localhost:8501`.
 - [x] **Phase 3: Resume Analyzer** (File parser, prompt templates, ATS scoring)
 - [x] **Phase 4: Job Hunter** (Search query builder, listing capture)
 - [x] **Phase 5: Job Matching** (Resume vs. Job Description matching)
-- [ ] **Phase 6: Interview Coach** (Interactive mock interview Q&A with evaluation)
+- [x] **Phase 6: Interview Coach** (Interactive mock interview Q&A with evaluation)
 - [ ] **Phase 7: Career Planner** (Career goal milestones and learning roadmaps)

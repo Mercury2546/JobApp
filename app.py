@@ -111,8 +111,8 @@ def render_dashboard_overview():
             | **Phase 3** | **ระบบวิเคราะห์เรซูเม่ด้วย AI & รองรับ PDF (Resume Analyzer & ATS)** | 🟢 **เสร็จสมบูรณ์** |
             | **Phase 4** | **ระบบค้นหาตำแหน่งงานอัจฉริยะ (Job Hunter & Query Builder)** | 🟢 **เสร็จสมบูรณ์** |
             | **Phase 5** | **ระบบจับคู่งานและทักษะ (Job Matching & Fit Score)** | 🟢 **เสร็จสมบูรณ์** |
-            | **Phase 6** | **โค้ชจำลองการสัมภาษณ์งาน (Interview Coach & STAR Feedback)** | 🟡 **ลำดับถัดไป** |
-            | **Phase 7** | **แผนที่เส้นทางสายอาชีพ (Career Planner & Roadmaps)** | ⚪ วางแผนแล้ว |
+            | **Phase 6** | **โค้ชจำลองการสัมภาษณ์งาน (Interview Coach & STAR Feedback)** | 🟢 **เสร็จสมบูรณ์** |
+            | **Phase 7** | **แผนที่เส้นทางสายอาชีพ (Career Planner & Roadmaps)** | 🟡 **ลำดับถัดไป** |
             """
         )
 
