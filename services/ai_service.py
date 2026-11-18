@@ -4,7 +4,7 @@ Configurable wrapper around OpenAI API with proper error handling, logging,
 and validation. Does not return fake responses.
 """
 from typing import Optional, List, Dict, Any
-from config.settings import OPENAI_API_KEY, OPENAI_MODEL, is_openai_configured
+from config.settings import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL, is_openai_configured
 from utils.logger import setup_logger
 
 logger = setup_logger("ai_service")
@@ -22,36 +22,46 @@ class APIKeyMissingError(AIServiceError):
 
 class AIService:
     """
-    Manages interactions with OpenAI language models.
+    Manages interactions with OpenAI or OpenAI-compatible language models (Groq, OpenRouter, Ollama, etc.).
     """
 
-    def __init__(self, api_key: Optional[str] = None, default_model: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        default_model: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ):
         self.api_key = api_key or OPENAI_API_KEY
         self.default_model = default_model or OPENAI_MODEL
+        self.base_url = base_url or OPENAI_BASE_URL
         self._client = None
 
     def _get_client(self):
         """
-        Lazily creates and returns the OpenAI client.
+        Lazily creates and returns the OpenAI client with optional custom base_url.
         Raises APIKeyMissingError if the key is missing or invalid.
         """
         if not is_openai_configured() and not self.api_key:
-            logger.error("Attempted AI request without a configured OpenAI API Key.")
+            logger.error("Attempted AI request without a configured API Key.")
             raise APIKeyMissingError(
-                "OpenAI API key is missing or not configured. "
-                "Please add your valid OPENAI_API_KEY in the .env file."
+                "API Key is missing or not configured. "
+                "Please add your OPENAI_API_KEY in the .env file."
             )
 
         if self._client is None:
             try:
                 from openai import OpenAI
-                self._client = OpenAI(api_key=self.api_key)
+                client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
+                if self.base_url:
+                    client_kwargs["base_url"] = self.base_url
+                    logger.info(f"Initializing AI Client with custom base_url: {self.base_url}")
+                self._client = OpenAI(**client_kwargs)
             except ImportError:
                 logger.critical("openai package is not installed.")
                 raise AIServiceError("The 'openai' Python package is not installed. Please install requirements.txt.")
             except Exception as e:
-                logger.error(f"Failed to initialize OpenAI client: {e}")
-                raise AIServiceError(f"OpenAI Client initialization error: {e}")
+                logger.error(f"Failed to initialize AI client: {e}")
+                raise AIServiceError(f"AI Client initialization error: {e}")
 
         return self._client
 
@@ -93,34 +103,39 @@ class AIService:
             return content
 
         except openai.AuthenticationError as e:
-            logger.error(f"OpenAI authentication error: {e}")
-            raise AIServiceError("Authentication failed: Invalid OpenAI API key. Check your .env file.") from e
+            logger.error(f"AI authentication error: {e}")
+            raise AIServiceError("การยืนยันตัวตนล้มเหลว (Authentication failed): ตรวจสอบ API Key และ Base URL ในไฟล์ .env") from e
 
         except openai.RateLimitError as e:
-            logger.error(f"OpenAI rate limit exceeded: {e}")
-            raise AIServiceError("OpenAI rate limit reached or quota exhausted. Please check your account quota.") from e
+            logger.error(f"AI rate limit exceeded or quota exhausted: {e}")
+            raise AIServiceError(
+                "โควตาการใช้งานของ AI หมดลง (Quota exhausted หรือ Rate limit): "
+                "โปรดตรวจสอบยอดเงินในบัญชี หรือสลับไปใช้บริการฟรี เช่น Groq โดยตั้งค่า OPENAI_BASE_URL ในไฟล์ .env"
+            ) from e
 
         except openai.APIConnectionError as e:
-            logger.error(f"OpenAI network connection error: {e}")
-            raise AIServiceError("Network error: Unable to reach OpenAI servers. Please check your internet connection.") from e
+            logger.error(f"AI network connection error: {e}")
+            raise AIServiceError("เกิดปัญหาการเชื่อมต่อเครือข่าย ไม่สามารถติดต่อเซิร์ฟเวอร์ AI ได้") from e
 
         except openai.APIError as e:
-            logger.error(f"OpenAI API returned an error: {e}")
-            raise AIServiceError(f"OpenAI API error: {e.message}") from e
+            logger.error(f"AI API returned an error: {e}")
+            raise AIServiceError(f"AI API Error: {e.message}") from e
 
         except Exception as e:
             logger.error(f"Unexpected error during AI generation: {e}", exc_info=True)
-            raise AIServiceError(f"An unexpected error occurred while communicating with AI service: {e}") from e
+            raise AIServiceError(f"เกิดข้อผิดพลาดในการติดต่อกับ AI Service: {e}") from e
 
     def test_connection(self) -> Dict[str, Any]:
         """
-        Runs a minimal check to verify API key validity without high token costs.
+        Runs a minimal check to verify API key and endpoint validity.
         """
         if not is_openai_configured():
             return {
                 "success": False,
-                "message": "API key is not configured. Please set OPENAI_API_KEY in .env.",
+                "message": "ยังไม่ได้ระบุ API Key โปรดตั้งค่า OPENAI_API_KEY ในไฟล์ .env",
             }
+
+        provider_name = f"Custom Base URL: {self.base_url}" if self.base_url else "OpenAI Official"
 
         try:
             # Minimal 1-token call to test auth
@@ -130,7 +145,7 @@ class AIService:
                 temperature=0.0,
                 max_tokens=2,
             )
-            return {"success": True, "message": "Successfully connected to OpenAI API."}
+            return {"success": True, "message": f"เชื่อมต่อสำเร็จกับ {provider_name} (โมเดล: {self.default_model})"}
         except AIServiceError as e:
             return {"success": False, "message": str(e)}
 

@@ -110,12 +110,25 @@ copy .env.example .env
 # macOS / Linux
 cp .env.example .env
 ```
-Open `.env` and set your OpenAI API key:
+
+#### Option A: Official OpenAI
 ```ini
 OPENAI_API_KEY=sk-your-actual-openai-api-key
 OPENAI_MODEL=gpt-4o-mini
-DB_PATH=career_agent.db
-LOG_LEVEL=INFO
+```
+
+#### Option B: Groq (100% Free & Fast - https://console.groq.com)
+```ini
+OPENAI_API_KEY=gsk_your_groq_api_key_here
+OPENAI_MODEL=llama-3.3-70b-versatile
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
+```
+
+#### Option C: OpenRouter (Free & Paid Models - https://openrouter.ai)
+```ini
+OPENAI_API_KEY=sk-or-v1-your_openrouter_api_key_here
+OPENAI_MODEL=meta-llama/llama-3.3-70b-instruct:free
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
 ```
 
 ### 6. Run the Application

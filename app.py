@@ -3,7 +3,7 @@ Career Agent - จุดเริ่มต้นหลักของแอป�
 แดชบอร์ดศูนย์กลางสำหรับการจัดการและพัฒนาสายอาชีพอย่างชาญฉลาด
 """
 import streamlit as st
-from config.settings import OPENAI_MODEL, is_openai_configured
+from config.settings import OPENAI_MODEL, OPENAI_BASE_URL, is_openai_configured
 from database.db import init_db, check_db_health, get_db_connection
 from services.ai_service import ai_service
 from utils.logger import setup_logger
@@ -123,15 +123,16 @@ def render_dashboard_overview():
         else:
             st.error("🔴 ฐานข้อมูล SQLite: พบปัญหาการเชื่อมต่อ")
 
+        provider_label = f"Custom ({OPENAI_BASE_URL})" if OPENAI_BASE_URL else "OpenAI Official"
         if is_openai_configured():
-            st.success(f"🟢 OpenAI API: ตั้งค่าคีย์เรียบร้อย (โมเดล: `{OPENAI_MODEL}`)")
+            st.success(f"🟢 ผู้ให้บริการ AI: {provider_label}\n\nโมเดล: `{OPENAI_MODEL}`")
         else:
-            st.warning("🟡 OpenAI API: ยังไม่ได้ระบุคีย์ (โปรดเพิ่มในไฟล์ `.env`)")
+            st.warning("🟡 AI Provider: ยังไม่ได้ระบุคีย์ (โปรดเพิ่มในไฟล์ `.env`)")
 
-        with st.expander("ทดสอบการเชื่อมต่อกับ OpenAI API"):
-            st.caption("ระบบจะส่งคำสั่งทดสอบไปยัง OpenAI เพื่อตรวจสอบว่า API Key ใช้งานได้จริง")
+        with st.expander("ทดสอบการเชื่อมต่อกับ AI Provider"):
+            st.caption(f"ทดสอบยิงคำสั่ง Ping ไปยัง {provider_label}")
             if st.button("ทดสอบ Ping API", use_container_width=True):
-                with st.spinner("กำลังตรวจสอบการเชื่อมต่อกับ OpenAI..."):
+                with st.spinner("กำลังตรวจสอบการเชื่อมต่อกับ AI..."):
                     result = ai_service.test_connection()
                     if result["success"]:
                         st.success(result["message"])
@@ -159,6 +160,8 @@ def main():
     st.sidebar.divider()
     st.sidebar.subheader("ข้อมูลสภาพแวดล้อม")
     st.sidebar.write(f"**โมเดล AI:** `{OPENAI_MODEL}`")
+    if OPENAI_BASE_URL:
+        st.sidebar.caption(f"Endpoint: `{OPENAI_BASE_URL}`")
     st.sidebar.write(f"**ฐานข้อมูล:** `{'พร้อมใช้งาน' if db_ready else 'ขัดข้อง'}`")
     st.sidebar.write(f"**API Key:** `{'เชื่อมต่อแล้ว' if is_openai_configured() else 'ยังไม่ตั้งค่า'}`")
 

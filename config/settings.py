@@ -22,9 +22,10 @@ if _DOTENV_AVAILABLE:
         load_dotenv()
 
 
-# OpenAI Settings
+# OpenAI & Compatible AI Provider Settings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "").strip() or None
 
 # Database Settings
 DB_FILE_NAME = os.getenv("DB_PATH", "career_agent.db").strip()
