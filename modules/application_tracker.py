@@ -1,7 +1,7 @@
 """
-Module 6: Application Tracker.
-Provides full CRUD capabilities for tracking job applications across the hiring pipeline.
-Stores and updates records directly in the SQLite database.
+โมดูลที่ 6: ระบบติดตามการสมัครงาน (Application Tracker)
+ระบบจัดการสถานะการสมัครงานแบบ CRUD บนฐานข้อมูล SQLite
+รองรับการติดตามแบบไปป์ไลน์ (Kanban), ค้นหาตำแหน่งงาน และจัดการข้อมูลแบบภาษาไทยเต็มรูปแบบ
 """
 from datetime import date
 from typing import Dict, List, Optional
@@ -12,20 +12,20 @@ from utils.logger import setup_logger
 
 logger = setup_logger("application_tracker")
 
-# Pipeline status choices
+# รายการสถานะและป้ายแสดงสถานะ (Status Badges)
 VALID_STATUSES = ["Wishlist", "Applied", "Interviewing", "Offered", "Rejected"]
 
-STATUS_BADGES = {
-    "Wishlist": "📌 Wishlist",
-    "Applied": "📨 Applied",
-    "Interviewing": "🎙️ Interviewing",
-    "Offered": "🎉 Offered",
-    "Rejected": "❌ Rejected",
+STATUS_LABELS = {
+    "Wishlist": "📌 สนใจ (Wishlist)",
+    "Applied": "📨 สมัครแล้ว (Applied)",
+    "Interviewing": "🎙️ สัมภาษณ์ (Interviewing)",
+    "Offered": "🎉 ได้รับข้อเสนอ (Offered)",
+    "Rejected": "❌ ไม่ผ่านคัดเลือก (Rejected)",
 }
 
 
 # ==========================================
-# Database Operations (CRUD)
+# จัดการฐานข้อมูล (Database CRUD Operations)
 # ==========================================
 
 def add_application(
@@ -38,9 +38,7 @@ def add_application(
     applied_date: str = "",
     notes: str = "",
 ) -> int:
-    """
-    Inserts a new job application into the database.
-    """
+    """เพิ่มข้อมูลการสมัครงานใหม่ลงในฐานข้อมูล SQLite"""
     if status not in VALID_STATUSES:
         status = "Wishlist"
 
@@ -65,17 +63,15 @@ def add_application(
                 ),
             )
             new_id = cursor.lastrowid
-            logger.info(f"Added new application (ID: {new_id}) for {company} - {role}")
+            logger.info(f"เพิ่มงานใหม่สำเร็จ ID {new_id}: {company} - {role}")
             return new_id
     except Exception as e:
-        logger.error(f"Failed to add application: {e}", exc_info=True)
+        logger.error(f"เกิดข้อผิดพลาดในการเพิ่มงาน: {e}", exc_info=True)
         raise
 
 
 def get_all_applications(status_filter: Optional[str] = None, search_term: Optional[str] = None) -> List[Dict]:
-    """
-    Retrieves applications from the database with optional status filtering and keyword search.
-    """
+    """ค้นหาและดึงข้อมูลการสมัครงานทั้งหมดตามตัวกรองและคำค้นหา"""
     query = "SELECT * FROM applications WHERE 1=1"
     params: list = []
 
@@ -97,7 +93,7 @@ def get_all_applications(status_filter: Optional[str] = None, search_term: Optio
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
     except Exception as e:
-        logger.error(f"Failed to fetch applications: {e}", exc_info=True)
+        logger.error(f"เกิดข้อผิดพลาดในการดึงข้อมูลการสมัครงาน: {e}", exc_info=True)
         return []
 
 
@@ -112,9 +108,7 @@ def update_application(
     applied_date: str,
     notes: str,
 ) -> bool:
-    """
-    Updates all fields of an existing application.
-    """
+    """อัปเดตข้อมูลรายละเอียดการสมัครงาน"""
     if status not in VALID_STATUSES:
         status = "Wishlist"
 
@@ -140,52 +134,46 @@ def update_application(
                     app_id,
                 ),
             )
-            logger.info(f"Updated application ID {app_id}")
+            logger.info(f"อัปเดตข้อมูลงาน ID {app_id} สำเร็จ")
             return cursor.rowcount > 0
     except Exception as e:
-        logger.error(f"Failed to update application ID {app_id}: {e}", exc_info=True)
+        logger.error(f"เกิดข้อผิดพลาดในการอัปเดตงาน ID {app_id}: {e}", exc_info=True)
         raise
 
 
 def update_application_status(app_id: int, new_status: str) -> bool:
-    """
-    Quick status transition for pipeline boards.
-    """
+    """เปลี่ยนสถานะงานอย่างรวดเร็ว (สำหรับบอร์ด Kanban)"""
     if new_status not in VALID_STATUSES:
-        raise ValueError(f"Invalid status: {new_status}")
+        raise ValueError(f"สถานะไม่ถูกต้อง: {new_status}")
 
     query = "UPDATE applications SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, (new_status, app_id))
-            logger.info(f"Updated status for application ID {app_id} to {new_status}")
+            logger.info(f"เปลี่ยนสถานะงาน ID {app_id} เป็น {new_status}")
             return cursor.rowcount > 0
     except Exception as e:
-        logger.error(f"Failed to update status for application ID {app_id}: {e}", exc_info=True)
+        logger.error(f"เกิดข้อผิดพลาดในการเปลี่ยนสถานะงาน ID {app_id}: {e}", exc_info=True)
         raise
 
 
 def delete_application(app_id: int) -> bool:
-    """
-    Deletes an application by ID.
-    """
+    """ลบข้อมูลการสมัครงานตาม ID"""
     query = "DELETE FROM applications WHERE id = ?;"
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, (app_id,))
-            logger.info(f"Deleted application ID {app_id}")
+            logger.info(f"ลบข้อมูลงาน ID {app_id} สำเร็จ")
             return cursor.rowcount > 0
     except Exception as e:
-        logger.error(f"Failed to delete application ID {app_id}: {e}", exc_info=True)
+        logger.error(f"เกิดข้อผิดพลาดในการลบงาน ID {app_id}: {e}", exc_info=True)
         raise
 
 
 def get_status_counts() -> Dict[str, int]:
-    """
-    Returns counts for each status to populate pipeline metrics.
-    """
+    """คำนวณจำนวนงานในแต่ละสถานะ"""
     counts = {s: 0 for s in VALID_STATUSES}
     try:
         with get_db_connection() as conn:
@@ -195,38 +183,44 @@ def get_status_counts() -> Dict[str, int]:
                 if row["status"] in counts:
                     counts[row["status"]] = row["cnt"]
     except Exception as e:
-        logger.error(f"Failed to get status counts: {e}")
+        logger.error(f"เกิดข้อผิดพลาดในการคำนวณสถิติสถานะ: {e}")
     return counts
 
 
 # ==========================================
-# Streamlit UI Views
+# หน้าจอแสดงผล (Streamlit UI Views)
 # ==========================================
 
 def render_add_application_form():
-    """Form view to add a new job application."""
-    st.subheader("➕ Track a New Job Application")
-    st.write("Record a new opportunity in your pipeline.")
+    """ฟอร์มสำหรับเพิ่มข้อมูลการสมัครงานใหม่"""
+    st.subheader("➕ บันทึกข้อมูลการสมัครงานใหม่")
+    st.write("บันทึกตำแหน่งงาน บริษัท และขั้นตอนที่คุณกำลังดำเนินการเพื่อไม่ให้พลาดทุกโอกาส")
 
     with st.form("add_application_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
-            company = st.text_input("Company Name *", placeholder="e.g. Acme Corp")
-            role = st.text_input("Job Title / Role *", placeholder="e.g. Senior Software Engineer")
-            location = st.text_input("Location", placeholder="e.g. Remote, New York, NY")
+            company = st.text_input("ชื่อบริษัท / องค์กร *", placeholder="เช่น Google, SCB TechX, Agoda")
+            role = st.text_input("ตำแหน่งงานที่สมัคร *", placeholder="เช่น Senior Python Engineer, Data Analyst")
+            location = st.text_input("สถานที่ทำงาน", placeholder="เช่น กรุงเทพฯ / Hybrid / Remote 100%")
         with col2:
-            status = st.selectbox("Current Status", VALID_STATUSES, index=0)
-            salary = st.text_input("Salary / Compensation", placeholder="e.g. $130,000 - $150,000")
-            applied_date = st.date_input("Date Applied", value=date.today())
+            status_index = 0
+            status_selected = st.selectbox(
+                "สถานะปัจจุบัน",
+                VALID_STATUSES,
+                format_func=lambda s: STATUS_LABELS.get(s, s),
+                index=status_index,
+            )
+            salary = st.text_input("ฐานเงินเดือน / ผลตอบแทน", placeholder="เช่น 80,000 - 120,000 บาท/เดือน")
+            applied_date = st.date_input("วันที่สมัคร", value=date.today())
 
-        job_url = st.text_input("Job Posting URL", placeholder="https://linkedin.com/jobs/view/...")
-        notes = st.text_area("Notes & Interview Contacts", placeholder="Recruiter name, referral info, notes...")
+        job_url = st.text_input("ลิงก์ประกาศรับสมัครงาน (URL)", placeholder="https://linkedin.com/jobs/view/...")
+        notes = st.text_area("บันทึกเพิ่มเติม / ข้อมูลผู้ติดต่อ", placeholder="ชื่อผู้ติดต่อ HR, ข้อมูลรอบสัมภาษณ์, ข้อมูลผู้แนะนำ (Referral)...")
 
-        submitted = st.form_submit_button("Save Application", use_container_width=True)
+        submitted = st.form_submit_button("💾 บันทึกข้อมูลการสมัครงาน", use_container_width=True)
 
         if submitted:
             if not company.strip() or not role.strip():
-                st.error("Please fill in both Company Name and Job Title.")
+                st.error("กรุณาระบุทั้งชื่อบริษัทและตำแหน่งงาน")
             else:
                 try:
                     add_application(
@@ -235,38 +229,38 @@ def render_add_application_form():
                         location=location,
                         salary=salary,
                         job_url=job_url,
-                        status=status,
+                        status=status_selected,
                         applied_date=str(applied_date),
                         notes=notes,
                     )
-                    st.success(f"Application for **{role}** at **{company}** saved successfully!")
+                    st.success(f"บันทึกตำแหน่ง **{role}** ที่ **{company}** เรียบร้อยแล้ว!")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Failed to save application: {e}")
+                    st.error(f"เกิดข้อผิดพลาดในการบันทึก: {e}")
 
 
 def render_pipeline_view():
-    """Kanban-style column view of applications by status."""
-    st.subheader("📊 Hiring Pipeline (Kanban Board)")
+    """มุมมองกระดาน Kanban ติดตามสถานะงาน"""
+    st.subheader("📊 กระดานติดตามสถานะการสมัครงาน (Kanban Pipeline)")
     counts = get_status_counts()
 
-    # Metric summary row
+    # แสดงตัวเลขสถิติสรุป
     cols = st.columns(len(VALID_STATUSES))
     for i, st_name in enumerate(VALID_STATUSES):
         with cols[i]:
-            st.metric(label=st_name, value=counts[st_name])
+            st.metric(label=STATUS_LABELS[st_name], value=f"{counts[st_name]} งาน")
 
     st.divider()
 
-    # Column board
+    # เสาคอลัมน์ Kanban
     kanban_cols = st.columns(len(VALID_STATUSES))
     for idx, st_name in enumerate(VALID_STATUSES):
         with kanban_cols[idx]:
-            st.markdown(f"#### {STATUS_BADGES[st_name]}")
+            st.markdown(f"#### {STATUS_LABELS[st_name]}")
             apps_in_stage = get_all_applications(status_filter=st_name)
 
             if not apps_in_stage:
-                st.caption("No applications in this stage.")
+                st.caption("ยังไม่มีรายการในขั้นตอนนี้")
             else:
                 for app in apps_in_stage:
                     with st.container(border=True):
@@ -279,11 +273,12 @@ def render_pipeline_view():
                         if app["applied_date"]:
                             st.caption(f"📅 {format_date(app['applied_date'])}")
 
-                        # Quick Move Dropdown
+                        # เลือดย้ายสถานะอย่างรวดเร็ว
                         current_idx = VALID_STATUSES.index(app["status"])
                         new_status = st.selectbox(
-                            "Move to",
+                            "ย้ายสถานะ",
                             VALID_STATUSES,
+                            format_func=lambda s: STATUS_LABELS.get(s, s),
                             index=current_idx,
                             key=f"move_{app['id']}",
                             label_visibility="collapsed",
@@ -294,58 +289,64 @@ def render_pipeline_view():
 
 
 def render_list_view():
-    """Searchable, filterable list of all job applications with edit/delete actions."""
-    st.subheader("📋 Application Directory")
+    """มุมมองตารางรายการ ค้นหา และแก้ไข/ลบ"""
+    st.subheader("📋 คลังรายการสมัครงานทั้งหมด")
 
     col_search, col_filter = st.columns([3, 1])
     with col_search:
-        search_query = st.text_input("🔍 Search by company, role, or keywords", placeholder="Type to filter...")
+        search_query = st.text_input("🔍 ค้นหาตามชื่อบริษัท, ตำแหน่ง, หรือคีย์เวิร์ด", placeholder="พิมพ์เพื่อค้นหา...")
     with col_filter:
-        filter_status = st.selectbox("Filter Status", ["All"] + VALID_STATUSES)
+        filter_options = ["ทั้งหมด"] + VALID_STATUSES
+        filter_status = st.selectbox(
+            "กรองตามสถานะ",
+            filter_options,
+            format_func=lambda s: "ทั้งหมด" if s == "ทั้งหมด" else STATUS_LABELS.get(s, s),
+        )
 
-    selected_status = None if filter_status == "All" else filter_status
+    selected_status = None if filter_status == "ทั้งหมด" else filter_status
     applications = get_all_applications(status_filter=selected_status, search_term=search_query)
 
-    st.write(f"Showing **{len(applications)}** applications")
+    st.write(f"พบรายการทั้งหมด **{len(applications)}** รายการ")
 
     if not applications:
-        st.info("No matching applications found. Use the 'Add Application' tab to record one.")
+        st.info("ไม่พบรายการสมัครงานที่ตรงกับเงื่อนไข สามารถเพิ่มได้ที่แท็บ 'เพิ่มงานใหม่'")
         return
 
     for app in applications:
-        with st.expander(f"{STATUS_BADGES.get(app['status'], app['status'])} — **{app['company']}** : {app['role']}"):
+        badge = STATUS_LABELS.get(app["status"], app["status"])
+        with st.expander(f"{badge} — **{app['company']}** : {app['role']}"):
             col1, col2 = st.columns(2)
             with col1:
-                st.write(f"**Company:** {app['company']}")
-                st.write(f"**Role:** {app['role']}")
-                st.write(f"**Location:** {app['location'] or 'Not specified'}")
-                st.write(f"**Salary:** {app['salary'] or 'Not specified'}")
+                st.write(f"**บริษัท:** {app['company']}")
+                st.write(f"**ตำแหน่ง:** {app['role']}")
+                st.write(f"**สถานที่:** {app['location'] or 'ไม่ระบุ'}")
+                st.write(f"**เงินเดือน:** {app['salary'] or 'ไม่ระบุ'}")
             with col2:
-                st.write(f"**Status:** {app['status']}")
-                st.write(f"**Date Applied:** {format_date(app['applied_date'])}")
+                st.write(f"**สถานะ:** {STATUS_LABELS.get(app['status'], app['status'])}")
+                st.write(f"**วันที่สมัคร:** {format_date(app['applied_date'])}")
                 if app["job_url"]:
-                    st.markdown(f"**Posting URL:** [View Posting]({app['job_url']})")
-                st.write(f"**Created:** {app['created_at']}")
+                    st.markdown(f"**ลิงก์งาน:** [เปิดดูประกาศรับสมัคร]({app['job_url']})")
+                st.write(f"**บันทึกเมื่อ:** {app['created_at']}")
 
             if app["notes"]:
-                st.info(f"**Notes:**\n\n{app['notes']}")
+                st.info(f"**บันทึกเพิ่มเติม:**\n\n{app['notes']}")
 
-            # Edit and Delete buttons
+            # ปุ่มแก้ไขและลบ
             bcol1, bcol2, _ = st.columns([1, 1, 4])
             with bcol1:
-                if st.button("✏️ Edit", key=f"edit_btn_{app['id']}"):
+                if st.button("✏️ แก้ไข", key=f"edit_btn_{app['id']}"):
                     st.session_state["edit_app_id"] = app["id"]
                     st.rerun()
             with bcol2:
-                if st.button("🗑️ Delete", key=f"del_btn_{app['id']}", type="secondary"):
+                if st.button("🗑️ ลบ", key=f"del_btn_{app['id']}", type="secondary"):
                     delete_application(app["id"])
-                    st.success(f"Deleted application for {app['company']}.")
+                    st.success(f"ลบรายการของบริษัท {app['company']} เรียบร้อยแล้ว")
                     st.rerun()
 
 
 def render_edit_view(app_id: int):
-    """View to edit an existing application record."""
-    st.subheader(f"✏️ Edit Application #{app_id}")
+    """หน้าจอแก้ไขข้อมูลงาน"""
+    st.subheader(f"✏️ แก้ไขข้อมูลการสมัครงาน #{app_id}")
 
     try:
         with get_db_connection() as conn:
@@ -353,40 +354,45 @@ def render_edit_view(app_id: int):
             cursor.execute("SELECT * FROM applications WHERE id = ?;", (app_id,))
             row = cursor.fetchone()
             if not row:
-                st.error("Application not found.")
-                if st.button("Back to List"):
+                st.error("ไม่พบรายการสมัครงานนี้ในระบบ")
+                if st.button("กลับไปยังหน้ารายการ"):
                     st.session_state.pop("edit_app_id", None)
                     st.rerun()
                 return
             app = dict(row)
     except Exception as e:
-        st.error(f"Error loading application: {e}")
+        st.error(f"เกิดข้อผิดพลาดในการโหลดข้อมูล: {e}")
         return
 
     with st.form(f"edit_form_{app_id}"):
         col1, col2 = st.columns(2)
         with col1:
-            company = st.text_input("Company Name *", value=app["company"])
-            role = st.text_input("Job Title / Role *", value=app["role"])
-            location = st.text_input("Location", value=app["location"] or "")
+            company = st.text_input("ชื่อบริษัท / องค์กร *", value=app["company"])
+            role = st.text_input("ตำแหน่งงานที่สมัคร *", value=app["role"])
+            location = st.text_input("สถานที่ทำงาน", value=app["location"] or "")
         with col2:
             status_index = VALID_STATUSES.index(app["status"]) if app["status"] in VALID_STATUSES else 0
-            status = st.selectbox("Current Status", VALID_STATUSES, index=status_index)
-            salary = st.text_input("Salary / Compensation", value=app["salary"] or "")
-            applied_date = st.text_input("Date Applied (YYYY-MM-DD)", value=app["applied_date"] or get_current_date_str())
+            status = st.selectbox(
+                "สถานะปัจจุบัน",
+                VALID_STATUSES,
+                format_func=lambda s: STATUS_LABELS.get(s, s),
+                index=status_index,
+            )
+            salary = st.text_input("ฐานเงินเดือน / ผลตอบแทน", value=app["salary"] or "")
+            applied_date = st.text_input("วันที่สมัคร (YYYY-MM-DD)", value=app["applied_date"] or get_current_date_str())
 
-        job_url = st.text_input("Job Posting URL", value=app["job_url"] or "")
-        notes = st.text_area("Notes", value=app["notes"] or "")
+        job_url = st.text_input("ลิงก์ประกาศรับสมัครงาน (URL)", value=app["job_url"] or "")
+        notes = st.text_area("บันทึกเพิ่มเติม", value=app["notes"] or "")
 
         sub_col1, sub_col2 = st.columns(2)
         with sub_col1:
-            save_clicked = st.form_submit_button("Update Application", use_container_width=True)
+            save_clicked = st.form_submit_button("💾 บันทึกการแก้ไข", use_container_width=True)
         with sub_col2:
-            cancel_clicked = st.form_submit_button("Cancel", use_container_width=True)
+            cancel_clicked = st.form_submit_button("ยกเลิก", use_container_width=True)
 
         if save_clicked:
             if not company.strip() or not role.strip():
-                st.error("Company Name and Role cannot be empty.")
+                st.error("ชื่อบริษัทและตำแหน่งงานต้องไม่เว้นว่าง")
             else:
                 update_application(
                     app_id=app_id,
@@ -400,7 +406,7 @@ def render_edit_view(app_id: int):
                     notes=notes,
                 )
                 st.session_state.pop("edit_app_id", None)
-                st.success("Application updated successfully!")
+                st.success("อัปเดตข้อมูลเรียบร้อยแล้ว!")
                 st.rerun()
 
         if cancel_clicked:
@@ -410,22 +416,22 @@ def render_edit_view(app_id: int):
 
 def render():
     """
-    Main render entry point for the Application Tracker module.
+    จุดเริ่มต้นการแสดงผลของโมดูล Application Tracker
     """
-    st.header("📋 Application Tracker")
-    st.caption("Organize and manage your full recruitment pipeline in SQLite.")
+    st.header("📋 ติดตามการสมัครงาน (Application Tracker)")
+    st.caption("บริหารจัดการท่อส่งการสมัครงาน (Pipeline) ครบทุกขั้นตอนบนฐานข้อมูล SQLite")
 
-    # Check if user is currently editing a specific application
+    # ตรวจสอบว่ากำลังแก้ไขงานเฉพาะรายการอยู่หรือไม่
     edit_id = st.session_state.get("edit_app_id")
     if edit_id:
         render_edit_view(edit_id)
         return
 
-    # Tabs for main views
+    # แท็บการทำงานหลัก
     tab_pipeline, tab_list, tab_add = st.tabs([
-        "📊 Pipeline (Kanban)",
-        "📋 Directory & Search",
-        "➕ Add New Application",
+        "📊 กระดานไปป์ไลน์ (Kanban)",
+        "📋 คลังรายการและค้นหา",
+        "➕ เพิ่มข้อมูลการสมัครงาน",
     ])
 
     with tab_pipeline:

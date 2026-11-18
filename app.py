@@ -1,6 +1,6 @@
 """
-Career Agent - Main Streamlit Application Entry Point.
-Modular dashboard coordinating all career intelligence services.
+Career Agent - จุดเริ่มต้นหลักของแอปพลิเคชัน Streamlit
+แดชบอร์ดศูนย์กลางสำหรับการจัดการและพัฒนาสายอาชีพอย่างชาญฉลาด
 """
 import streamlit as st
 from config.settings import OPENAI_MODEL, is_openai_configured
@@ -8,7 +8,7 @@ from database.db import init_db, check_db_health, get_db_connection
 from services.ai_service import ai_service
 from utils.logger import setup_logger
 
-# Import core modules
+# นำเข้าโมดูลหลักทั้ง 6 โมดูล
 from modules import (
     resume_analyzer,
     job_hunter,
@@ -20,30 +20,30 @@ from modules import (
 
 logger = setup_logger("app")
 
-# 1. Page Configuration
+# 1. ตั้งค่าหน้าเพจ Streamlit
 st.set_page_config(
-    page_title="Career Agent | All-in-One Career Assistant",
+    page_title="Career Agent | ผู้ช่วยอัจฉริยะด้านการหางานและสายอาชีพ",
     page_icon="💼",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# 2. Database Initialization
+# 2. เริ่มต้นฐานข้อมูล SQLite
 @st.cache_resource
 def initialize_database():
-    """Ensure database tables exist on application startup."""
+    """ตรวจสอบและสร้างตารางฐานข้อมูลเมื่อเริ่มเปิดแอปพลิเคชัน"""
     try:
         init_db()
         return True
     except Exception as e:
-        logger.error(f"Database initialization failure: {e}")
+        logger.error(f"เกิดข้อผิดพลาดในการเริ่มต้นฐานข้อมูล: {e}")
         return False
 
 db_ready = initialize_database()
 
 
 def get_quick_stats():
-    """Fetch summary metrics from the database."""
+    """ดึงข้อมูลสถิติภาพรวมจากฐานข้อมูล"""
     stats = {
         "applications": 0,
         "resumes": 0,
@@ -68,69 +68,70 @@ def get_quick_stats():
             cursor.execute("SELECT COUNT(*) FROM career_goals;")
             stats["goals"] = cursor.fetchone()[0]
     except Exception as e:
-        logger.warning(f"Could not load overview stats: {e}")
+        logger.warning(f"ไม่สามารถโหลดสถิติภาพรวมได้: {e}")
 
     return stats
 
 
 def render_dashboard_overview():
-    """Renders the main overview and status dashboard."""
-    st.title("💼 Career Agent Dashboard")
+    """แสดงผลหน้าแรก (ภาพรวมแดชบอร์ด)"""
+    st.title("💼 Career Agent — ศูนย์บัญชาการสายอาชีพอัจฉริยะ")
     st.markdown(
-        "Welcome to your intelligent career command center. "
-        "Track job applications, optimize resumes, practice interviews, and plan your career path in one place."
+        "ยินดีต้อนรับสู่ **Career Agent** ผู้ช่วยส่วนตัวที่จะช่วยคุณบริหารจัดการการหางานแบบครบวงจร "
+        "ตั้งแต่การปรับแต่งเรซูเม่ ค้นหาตำแหน่งงาน วิเคราะห์ความเข้ากันได้ ซ้อมสัมภาษณ์ ไปจนถึงการติดตามสถานะการสมัครงาน"
     )
     st.divider()
 
-    # Metric Cards
+    # การ์ดแสดงสถิติภาพรวม (Metric Cards)
     stats = get_quick_stats()
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric(label="Active Applications", value=stats["applications"])
+        st.metric(label="📌 งานที่ติดตามอยู่", value=f"{stats['applications']} งาน")
     with col2:
-        st.metric(label="Resumes Uploaded", value=stats["resumes"])
+        st.metric(label="📄 เรซูเม่ที่วิเคราะห์แล้ว", value=f"{stats['resumes']} ฉบับ")
     with col3:
-        st.metric(label="Interviews Practiced", value=stats["interviews"])
+        st.metric(label="🎙️ รอบซ้อมสัมภาษณ์", value=f"{stats['interviews']} ครั้ง")
     with col4:
-        st.metric(label="Career Goals", value=stats["goals"])
+        st.metric(label="📈 เป้าหมายสายอาชีพ", value=f"{stats['goals']} เป้าหมาย")
 
     st.divider()
 
-    # System Status and Roadmap Section
+    # แผนการพัฒนาและสถานะของระบบ
     col_left, col_right = st.columns([3, 2])
 
     with col_left:
-        st.subheader("🚀 Implementation Roadmap")
+        st.subheader("🚀 แผนการพัฒนาระบบ (Implementation Roadmap)")
         st.markdown(
             """
-            | Phase | Module | Status |
+            | เฟส (Phase) | โมดูลการทำงาน | สถานะ |
             | :--- | :--- | :--- |
-            | **Phase 1** | **Project Architecture & Setup** | 🟢 **Complete** |
-            | **Phase 2** | **Application Tracker (CRUD & SQLite)** | 🟢 **Complete** |
-            | **Phase 3** | **Resume Analyzer (AI Critique & ATS)** | 🟢 **Complete** |
-            | **Phase 4** | **Job Hunter (Search & Import)** | 🟡 **Up Next** |
-            | **Phase 5** | **Job Matching (Compatibility Fit)** | ⚪ Planned |
-            | **Phase 6** | **Interview Coach (STAR Feedback)** | ⚪ Planned |
-            | **Phase 7** | **Career Planner (Roadmaps & Goals)** | ⚪ Planned |
+            | **Phase 1** | **โครงสร้างโปรเจกต์และการตั้งค่าระบบ (Setup & Architecture)** | 🟢 **เสร็จสมบูรณ์** |
+            | **Phase 2** | **ระบบติดตามการสมัครงาน (Application Tracker - CRUD & SQLite)** | 🟢 **เสร็จสมบูรณ์** |
+            | **Phase 3** | **ระบบวิเคราะห์เรซูเม่ด้วย AI & รองรับ PDF (Resume Analyzer & ATS)** | 🟢 **เสร็จสมบูรณ์** |
+            | **Phase 4** | **ระบบค้นหาตำแหน่งงานอัจฉริยะ (Job Hunter & Query Builder)** | 🟡 **ลำดับถัดไป** |
+            | **Phase 5** | **ระบบจับคู่งานและทักษะ (Job Matching & Fit Score)** | ⚪ วางแผนแล้ว |
+            | **Phase 6** | **โค้ชจำลองการสัมภาษณ์งาน (Interview Coach & STAR Feedback)** | ⚪ วางแผนแล้ว |
+            | **Phase 7** | **แผนที่เส้นทางสายอาชีพ (Career Planner & Roadmaps)** | ⚪ วางแผนแล้ว |
             """
         )
 
     with col_right:
-        st.subheader("⚙️ System Status")
+        st.subheader("⚙️ สถานะระบบ (System Status)")
         if db_ready and check_db_health():
-            st.success("🟢 SQLite Database: Connected & Healthy")
+            st.success("🟢 ฐานข้อมูล SQLite: เชื่อมต่อและทำงานปกติ")
         else:
-            st.error("🔴 SQLite Database: Connection Issue")
+            st.error("🔴 ฐานข้อมูล SQLite: พบปัญหาการเชื่อมต่อ")
 
         if is_openai_configured():
-            st.success(f"🟢 OpenAI API: Key Configured ({OPENAI_MODEL})")
+            st.success(f"🟢 OpenAI API: ตั้งค่าคีย์เรียบร้อย (โมเดล: `{OPENAI_MODEL}`)")
         else:
-            st.warning("🟡 OpenAI API: Key Not Configured (Add to .env)")
+            st.warning("🟡 OpenAI API: ยังไม่ได้ระบุคีย์ (โปรดเพิ่มในไฟล์ `.env`)")
 
-        with st.expander("AI Connection Test"):
-            if st.button("Run Connection Ping", use_container_width=True):
-                with st.spinner("Pinging OpenAI..."):
+        with st.expander("ทดสอบการเชื่อมต่อกับ OpenAI API"):
+            st.caption("ระบบจะส่งคำสั่งทดสอบไปยัง OpenAI เพื่อตรวจสอบว่า API Key ใช้งานได้จริง")
+            if st.button("ทดสอบ Ping API", use_container_width=True):
+                with st.spinner("กำลังตรวจสอบการเชื่อมต่อกับ OpenAI..."):
                     result = ai_service.test_connection()
                     if result["success"]:
                         st.success(result["message"])
@@ -139,47 +140,47 @@ def render_dashboard_overview():
 
 
 def main():
-    # Sidebar Navigation
+    # แถบเมนูด้านข้าง (Sidebar Navigation)
     st.sidebar.title("💼 Career Agent")
-    st.sidebar.caption("v0.1.0 • Phase 1 Foundation")
+    st.sidebar.caption("v0.3.0 • ภาษาไทยเต็มรูปแบบ")
 
     menu_options = [
-        "Dashboard Overview",
-        "1. Resume Analyzer",
-        "2. Job Hunter",
-        "3. Job Matching",
-        "4. Interview Coach",
-        "5. Career Planner",
-        "6. Application Tracker",
+        "ภาพรวมแดชบอร์ด",
+        "1. วิเคราะห์เรซูเม่ (Resume Analyzer)",
+        "2. ค้นหาตำแหน่งงาน (Job Hunter)",
+        "3. จับคู่งานและทักษะ (Job Matching)",
+        "4. ฝึกซ้อมสัมภาษณ์ (Interview Coach)",
+        "5. วางแผนเส้นทางอาชีพ (Career Planner)",
+        "6. ติดตามการสมัครงาน (Application Tracker)",
     ]
 
-    selected_page = st.sidebar.radio("Navigate", menu_options, index=0)
+    selected_page = st.sidebar.radio("เมนูหลัก", menu_options, index=0)
 
     st.sidebar.divider()
-    st.sidebar.subheader("Environment")
-    st.sidebar.write(f"**Model:** `{OPENAI_MODEL}`")
-    st.sidebar.write(f"**DB Status:** `{'Ready' if db_ready else 'Error'}`")
-    st.sidebar.write(f"**AI Key:** `{'Set' if is_openai_configured() else 'Missing'}`")
+    st.sidebar.subheader("ข้อมูลสภาพแวดล้อม")
+    st.sidebar.write(f"**โมเดล AI:** `{OPENAI_MODEL}`")
+    st.sidebar.write(f"**ฐานข้อมูล:** `{'พร้อมใช้งาน' if db_ready else 'ขัดข้อง'}`")
+    st.sidebar.write(f"**API Key:** `{'เชื่อมต่อแล้ว' if is_openai_configured() else 'ยังไม่ตั้งค่า'}`")
 
-    # Routing
+    # การนำทางไปยังแต่ละโมดูล
     try:
-        if selected_page == "Dashboard Overview":
+        if selected_page == "ภาพรวมแดชบอร์ด":
             render_dashboard_overview()
-        elif selected_page == "1. Resume Analyzer":
+        elif selected_page == "1. วิเคราะห์เรซูเม่ (Resume Analyzer)":
             resume_analyzer.render()
-        elif selected_page == "2. Job Hunter":
+        elif selected_page == "2. ค้นหาตำแหน่งงาน (Job Hunter)":
             job_hunter.render()
-        elif selected_page == "3. Job Matching":
+        elif selected_page == "3. จับคู่งานและทักษะ (Job Matching)":
             job_matching.render()
-        elif selected_page == "4. Interview Coach":
+        elif selected_page == "4. ฝึกซ้อมสัมภาษณ์ (Interview Coach)":
             interview_coach.render()
-        elif selected_page == "5. Career Planner":
+        elif selected_page == "5. วางแผนเส้นทางอาชีพ (Career Planner)":
             career_planner.render()
-        elif selected_page == "6. Application Tracker":
+        elif selected_page == "6. ติดตามการสมัครงาน (Application Tracker)":
             application_tracker.render()
     except Exception as e:
-        logger.error(f"Error rendering page '{selected_page}': {e}", exc_info=True)
-        st.error(f"An error occurred while loading this module: {e}")
+        logger.error(f"เกิดข้อผิดพลาดในการโหลดหน้า '{selected_page}': {e}", exc_info=True)
+        st.error(f"เกิดข้อผิดพลาดขณะโหลดหน้านี้: {e}")
 
 
 if __name__ == "__main__":

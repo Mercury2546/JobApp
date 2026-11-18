@@ -1,26 +1,26 @@
 """
-General helper functions for Career Agent.
+ฟังก์ชันตัวช่วยทั่วไปสำหรับ Career Agent
 """
 from datetime import datetime
 from typing import Optional
 
 
-def format_date(date_str: Optional[str], input_fmt: str = "%Y-%m-%d", output_fmt: str = "%b %d, %Y") -> str:
+def format_date(date_str: Optional[str], input_fmt: str = "%Y-%m-%d", output_fmt: str = "%d/%m/%Y") -> str:
     """
-    Safely format a date string into a user-friendly format.
+    จัดรูปแบบวันที่ให้แสดงผลอย่างสวยงามและเข้าใจง่าย (วัน/เดือน/ปี)
     """
     if not date_str:
-        return "N/A"
+        return "ไม่ระบุ"
     try:
-        dt = datetime.strptime(date_str, input_fmt)
+        dt = datetime.strptime(str(date_str)[:10], input_fmt)
         return dt.strftime(output_fmt)
     except (ValueError, TypeError):
-        return date_str
+        return str(date_str)
 
 
 def truncate_text(text: Optional[str], max_len: int = 100) -> str:
     """
-    Truncate text with ellipsis if it exceeds max_len.
+    ตัดข้อความให้สั้นลงพร้อมใส่จุดไข่ปลา (...) หากยาวเกินกำหนด
     """
     if not text:
         return ""
@@ -31,6 +31,6 @@ def truncate_text(text: Optional[str], max_len: int = 100) -> str:
 
 def get_current_date_str() -> str:
     """
-    Return current date formatted as YYYY-MM-DD.
+    คืนค่าสตริงวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
     """
     return datetime.now().strftime("%Y-%m-%d")
