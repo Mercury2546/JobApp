@@ -137,7 +137,7 @@ Open your browser at `http://localhost:8501`.
 ## 🗺️ Implementation Roadmap
 - [x] **Phase 1: Project Architecture & Setup** (Foundation, SQLite DB, AI Service Layer, Dashboard Layout)
 - [x] **Phase 2: Application Tracker** (SQLite CRUD operations, status management, pipeline view)
-- [ ] **Phase 3: Resume Analyzer** (File parser, prompt templates, ATS scoring)
+- [x] **Phase 3: Resume Analyzer** (File parser, prompt templates, ATS scoring)
 - [ ] **Phase 4: Job Hunter** (Search query builder, listing capture)
 - [ ] **Phase 5: Job Matching** (Resume vs. Job Description matching)
 - [ ] **Phase 6: Interview Coach** (Interactive mock interview Q&A with evaluation)
