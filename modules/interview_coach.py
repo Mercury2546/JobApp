@@ -3,9 +3,11 @@
 จำลองคำถามสัมภาษณ์งานเชิงลึก (คำถามเชิงพฤติกรรม Behavioral และคำถามเชิงเทคนิค Technical)
 มีพื้นที่ให้ผู้ใช้ฝึกตอบ และประเมินผลลัพธ์ด้วย AI ตามหลัก STAR Method พร้อมบันทึกประวัติลงใน SQLite
 """
+
 import json
-from typing import Dict, List, Optional
+
 import streamlit as st
+
 from config.settings import is_openai_configured
 from database.db import get_db_connection
 from services.ai_service import AIServiceError, ai_service
@@ -14,13 +16,22 @@ from utils.logger import setup_logger
 
 logger = setup_logger("interview_coach")
 
-DIFFICULTY_LEVELS = ["ง่าย (Entry Level)", "ปานกลาง (Mid-Level)", "ท้าทาย / ขั้นสูง (Senior / Lead)"]
-QUESTION_TYPES = ["ผสมผสาน (พฤติกรรม + เทคนิค)", "คำถามเชิงพฤติกรรม (Behavioral - STAR)", "คำถามเชิงเทคนิคและการแก้ปัญหา (Technical & Problem Solving)"]
+DIFFICULTY_LEVELS = [
+    "ง่าย (Entry Level)",
+    "ปานกลาง (Mid-Level)",
+    "ท้าทาย / ขั้นสูง (Senior / Lead)",
+]
+QUESTION_TYPES = [
+    "ผสมผสาน (พฤติกรรม + เทคนิค)",
+    "คำถามเชิงพฤติกรรม (Behavioral - STAR)",
+    "คำถามเชิงเทคนิคและการแก้ปัญหา (Technical & Problem Solving)",
+]
 
 
 # ==========================================
 # จัดการฐานข้อมูล SQLite (Database Operations)
 # ==========================================
+
 
 def save_interview_session(
     role: str,
@@ -54,12 +65,12 @@ def save_interview_session(
             new_id = cursor.lastrowid
             logger.info(f"บันทึกประวัติการซ้อมสัมภาษณ์ ID {new_id} ({role}) เรียบร้อย")
             return new_id
-    except Exception as e:
-        logger.error(f"เกิดข้อผิดพลาดในการบันทึกรอบสัมภาษณ์: {e}", exc_info=True)
+    except Exception:
+        logger.exception("เกิดข้อผิดพลาดในการบันทึกรอบสัมภาษณ์")
         raise
 
 
-def get_all_interview_sessions() -> List[Dict]:
+def get_all_interview_sessions() -> list[dict]:
     """ดึงประวัติการซ้อมสัมภาษณ์ทั้งหมดจาก SQLite"""
     query = "SELECT * FROM interview_sessions ORDER BY created_at DESC;"
     try:
@@ -68,8 +79,8 @@ def get_all_interview_sessions() -> List[Dict]:
             cursor.execute(query)
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
-    except Exception as e:
-        logger.error(f"เกิดข้อผิดพลาดในการดึงประวัติสัมภาษณ์: {e}", exc_info=True)
+    except Exception:
+        logger.exception("เกิดข้อผิดพลาดในการดึงประวัติสัมภาษณ์")
         return []
 
 
@@ -82,8 +93,8 @@ def delete_interview_session(session_id: int) -> bool:
             cursor.execute(query, (session_id,))
             logger.info(f"ลบประวัติการซ้อมสัมภาษณ์ ID {session_id} เรียบร้อย")
             return cursor.rowcount > 0
-    except Exception as e:
-        logger.error(f"ไม่สามารถลบประวัติการซ้อมสัมภาษณ์ ID {session_id} ได้: {e}", exc_info=True)
+    except Exception:
+        logger.exception(f"ไม่สามารถลบประวัติการซ้อมสัมภาษณ์ ID {session_id} ได้")
         raise
 
 
@@ -91,7 +102,10 @@ def delete_interview_session(session_id: int) -> bool:
 # ตรรกะการสร้างคำถามและประเมินผลด้วย AI
 # ==========================================
 
-def generate_questions_with_ai(role: str, company: str, difficulty: str, q_type: str, num_q: int = 3) -> List[str]:
+
+def generate_questions_with_ai(
+    role: str, company: str, difficulty: str, q_type: str, num_q: int = 3
+) -> list[str]:
     """
     ขอชุดคำถามสัมภาษณ์จาก OpenAI
     """
@@ -127,19 +141,27 @@ def generate_questions_with_ai(role: str, company: str, difficulty: str, q_type:
             clean_resp = clean_resp.split("\n", 1)[1]
             if clean_resp.endswith("```"):
                 clean_resp = clean_resp.rsplit("\n", 1)[0]
-            clean_resp = clean_resp.replace("json", "").strip()
+            clean_resp = clean_resp.strip()
+            if clean_resp.lower().startswith("json"):
+                clean_resp = clean_resp[4:].strip()
 
         questions = json.loads(clean_resp)
         if isinstance(questions, list):
             return [str(q).strip() for q in questions if str(q).strip()]
         return [response]
-    except Exception as e:
+    except (json.JSONDecodeError, ValueError, IndexError) as e:
         logger.warning(f"ไม่สามารถแปลง JSON คำถามสัมภาษณ์ได้ แปลงเป็นลิสต์บรรทัดแทน: {e}")
-        lines = [line.strip("- 1234567890.").strip() for line in response.split("\n") if line.strip()]
+        lines = [
+            line.strip("- 1234567890.").strip()
+            for line in response.split("\n")
+            if line.strip()
+        ]
         return lines[:num_q] if lines else [response]
 
 
-def evaluate_answers_with_ai(role: str, questions: List[str], answers: List[str]) -> str:
+def evaluate_answers_with_ai(
+    role: str, questions: list[str], answers: list[str]
+) -> str:
     """
     ส่งคำตอบของผู้สมัครให้ OpenAI ประเมินตามเกณฑ์ STAR Method
     """
@@ -178,18 +200,58 @@ def evaluate_answers_with_ai(role: str, questions: List[str], answers: List[str]
 # หน้าจอแสดงผล (Streamlit UI Views)
 # ==========================================
 
+
 def render_practice_session():
     """หน้าจอจำลองรอบการซ้อมสัมภาษณ์งาน"""
     st.subheader("🎙️ เริ่มรอบซ้อมสัมภาษณ์จำลอง")
-    st.write("ตั้งค่าตำแหน่งงานที่ต้องการ จากนั้นให้ AI ออกคำถามสัมภาษณ์ และส่งคำตอบเพื่อรับการประเมินตามหลัก STAR")
+    st.write(
+        "ตั้งค่าตำแหน่งงานที่ต้องการ จากนั้นให้ AI ออกคำถามสัมภาษณ์ และส่งคำตอบเพื่อรับการประเมินตามหลัก STAR"
+    )
 
     if not is_openai_configured():
-        st.warning("⚠️ **ยังไม่ได้ตั้งค่า OpenAI API Key** โปรดระบุคีย์ในไฟล์ `.env` เพื่อให้ AI สามารถสร้างคำถามและประเมินผลได้")
+        st.warning(
+            "⚠️ **ยังไม่ได้ตั้งค่า OpenAI API Key** โปรดระบุคีย์ในไฟล์ `.env` เพื่อให้ AI สามารถสร้างคำถามและประเมินผลได้"
+        )
 
     col1, col2 = st.columns(2)
     with col1:
-        role = st.text_input("ตำแหน่งงานที่ต้องการซ้อมสัมภาษณ์ *", placeholder="เช่น Senior Data Engineer, Product Manager", value="Software Engineer")
-        company = st.text_input("บริษัทเป้าหมาย (ระบุหรือไม่ก็ได้)", placeholder="เช่น Agoda, SCB, Line MAN Wongnai")
+        role_presets = [
+            "🎨 Graphic Designer",
+            "✨ UX/UI Designer",
+            "🖌️ Graphic & Content Creator",
+            "📱 Product Designer (UI/UX)",
+            "💻 Web & Graphic Designer",
+            "✏️ พิมพ์ระบุตำแหน่งอื่นเอง...",
+        ]
+        shared_role = st.session_state.get("shared_role", "").strip()
+        default_role_idx = len(role_presets) - 1 if shared_role else 1
+        selected_role_preset = st.radio(
+            "ตำแหน่งงานที่ต้องการซ้อมสัมภาษณ์ * (กดเลือกได้ทันที)",
+            role_presets,
+            index=default_role_idx,
+        )
+        if selected_role_preset == "✏️ พิมพ์ระบุตำแหน่งอื่นเอง...":
+            role = st.text_input(
+                "พิมพ์ชื่อตำแหน่งงาน *",
+                value=shared_role,
+                placeholder="เช่น Senior UX/UI Specialist, Motion Artist",
+            )
+        else:
+            role = (
+                selected_role_preset.replace("🎨 ", "")
+                .replace("✨ ", "")
+                .replace("🖌️ ", "")
+                .replace("📱 ", "")
+                .replace("💻 ", "")
+                .replace("🎯 ", "")
+                .strip()
+            )
+
+        company = st.text_input(
+            "บริษัทเป้าหมาย (ระบุหรือไม่ก็ได้)",
+            value=st.session_state.get("shared_company", ""),
+            placeholder="เช่น Agoda, SCB, Line MAN Wongnai",
+        )
     with col2:
         difficulty = st.selectbox("ระดับความยากของคำถาม", DIFFICULTY_LEVELS, index=1)
         q_type = st.selectbox("ประเภทของคำถาม", QUESTION_TYPES, index=0)
@@ -218,11 +280,13 @@ def render_practice_session():
                         "answers": [""] * len(questions),
                     }
                     st.session_state.pop("latest_interview_eval", None)
-                    st.success(f"สร้างคำถามสัมภาษณ์สำเร็จจำนวน {len(questions)} ข้อ! กรุณาพิมพ์คำตอบด้านล่าง")
+                    st.success(
+                        f"สร้างคำถามสัมภาษณ์สำเร็จจำนวน {len(questions)} ข้อ! กรุณาพิมพ์คำตอบด้านล่าง"
+                    )
                 except AIServiceError as e:
                     st.error(f"เกิดข้อผิดพลาดจาก AI Service: {e}")
                 except Exception as e:
-                    logger.error(f"เกิดข้อผิดพลาดในการสร้างคำถาม: {e}", exc_info=True)
+                    logger.exception("เกิดข้อผิดพลาดในการสร้างคำถาม")
                     st.error(f"เกิดข้อผิดพลาด: {e}")
 
     # แสดงฟอร์มตอบคำถามเมื่อมีเซสชัน
@@ -248,7 +312,11 @@ def render_practice_session():
         st.session_state["interview_session"]["answers"] = answers_input
 
         # ปุ่มส่งคำตอบให้ประเมิน
-        if st.button("🚀 ส่งคำตอบและขอรับการประเมินจาก AI", type="secondary", use_container_width=True):
+        if st.button(
+            "🚀 ส่งคำตอบและขอรับการประเมินจาก AI",
+            type="secondary",
+            use_container_width=True,
+        ):
             if not any(a.strip() for a in answers_input):
                 st.error("กรุณาพิมพ์คำตอบอย่างน้อย 1 ข้อเพื่อรับการประเมิน")
             else:
@@ -266,7 +334,9 @@ def render_practice_session():
                             role=sess["role"],
                             company=sess["company"],
                             difficulty=sess["difficulty"],
-                            questions_json=json.dumps(sess["questions"], ensure_ascii=False),
+                            questions_json=json.dumps(
+                                sess["questions"], ensure_ascii=False
+                            ),
                             answers_json=json.dumps(answers_input, ensure_ascii=False),
                             feedback=eval_result,
                             score=80.0,  # Default score marker
@@ -275,7 +345,7 @@ def render_practice_session():
                     except AIServiceError as e:
                         st.error(f"เกิดข้อผิดพลาดจาก AI: {e}")
                     except Exception as e:
-                        logger.error(f"เกิดข้อผิดพลาดในการประเมิน: {e}", exc_info=True)
+                        logger.exception("เกิดข้อผิดพลาดในการประเมิน")
                         st.error(f"เกิดข้อผิดพลาด: {e}")
 
     # แสดงผลการประเมินล่าสุด
@@ -297,8 +367,14 @@ def render_history_view():
     st.write(f"พบประวัติการฝึกซ้อมทั้งหมด **{len(sessions)}** รอบ")
 
     for item in sessions:
-        created_display = format_date(item["created_at"][:10]) if item["created_at"] else "ไม่ระบุ"
-        company_tag = f" @ {item['company']}" if item["company"] and item["company"] != "ไม่ระบุบริษัท" else ""
+        created_display = (
+            format_date(item["created_at"][:10]) if item["created_at"] else "ไม่ระบุ"
+        )
+        company_tag = (
+            f" @ {item['company']}"
+            if item["company"] and item["company"] != "ไม่ระบุบริษัท"
+            else ""
+        )
         title_display = f"🎙️ **{item['role']}{company_tag}** ({item['difficulty']}) — เมื่อ {created_display}"
 
         with st.expander(title_display):
@@ -308,7 +384,7 @@ def render_history_view():
             with col2:
                 if st.button("🗑️ ลบประวัติรอบนี้", key=f"del_session_{item['id']}"):
                     delete_interview_session(item["id"])
-                    st.success("ลบประวัติการซ้อมเรียบร้อยแล้ว")
+                    st.toast("🗑️ ลบประวัติการซ้อมเรียบร้อยแล้ว")
                     st.rerun()
 
             # แสดงคำถามและคำตอบย้อนหลัง
@@ -319,8 +395,10 @@ def render_history_view():
                 for i, (q, a) in enumerate(zip(qs, ans), 1):
                     st.write(f"**ข้อ {i}:** {q}")
                     st.caption(f"คำตอบ: {a or '(ไม่ได้ตอบ)'}")
-            except Exception:
-                pass
+            except (json.JSONDecodeError, TypeError, KeyError) as e:
+                logger.debug(
+                    f"ไม่สามารถแสดงประวัติคำถาม-ตอบของ session {item.get('id')}: {e}"
+                )
 
             st.divider()
             st.markdown(item["feedback"])
@@ -360,13 +438,17 @@ def render():
     จุดเริ่มต้นการแสดงผลของโมดูล Interview Coach
     """
     st.header("🎙️ ฝึกซ้อมสัมภาษณ์จำลอง (Interview Coach)")
-    st.caption("ฝึกซ้อมตอบคำถามสัมภาษณ์งานจริง พร้อมรับการประเมินและข้อเสนอแนะตามหลัก STAR Method")
+    st.caption(
+        "ฝึกซ้อมตอบคำถามสัมภาษณ์งานจริง พร้อมรับการประเมินและข้อเสนอแนะตามหลัก STAR Method"
+    )
 
-    tab_practice, tab_history, tab_star = st.tabs([
-        "🎙️ เริ่มรอบซ้อมสัมภาษณ์ (Practice)",
-        "📚 ประวัติและการพัฒนา (Session History)",
-        "⭐ คู่มือเทคนิค STAR Method (STAR Guide)",
-    ])
+    tab_practice, tab_history, tab_star = st.tabs(
+        [
+            "🎙️ เริ่มรอบซ้อมสัมภาษณ์ (Practice)",
+            "📚 ประวัติและการพัฒนา (Session History)",
+            "⭐ คู่มือเทคนิค STAR Method (STAR Guide)",
+        ]
+    )
 
     with tab_practice:
         render_practice_session()

@@ -6,12 +6,13 @@ An intelligent, modular, AI-powered personal career assistant built in Python an
 
 ## 🌟 Core Features & Modules
 
-1. **📄 Resume Analyzer**: AI-driven critique, bullet-point refinement, and ATS readability check against target job descriptions.
+1. **📄 Resume Analyzer & Full Rewriter**: AI-driven ATS critique, keyword analysis, and 1-click full resume rewriting using Google's XYZ formula and action verbs.
 2. **🔍 Job Hunter**: Automated job search query creation and opportunity tracking.
 3. **🎯 Job Matching**: Quantitative compatibility scoring and skill gap identification.
 4. **🎙️ Interview Coach**: Dynamic mock interview question generation with STAR-method answer evaluation.
 5. **📈 Career Planner**: Long-term career progression milestones, skill roadmaps, and transition tracking.
-6. **📋 Application Tracker**: Pipeline management across application stages (Wishlist → Applied → Interviewing → Offered / Rejected).
+6. **📋 Application Tracker**: Pipeline management across application stages (Wishlist → Applied → Interviewing → Offered / Rejected) with Excel & Notion export.
+7. **✉️ Email Writer & JD Scanner**: AI-driven job application emails, formal cover letters, follow-ups, with Job URL fetching & Poster Image OCR (Facebook/LINE screenshots), 1-click tracking, and Excel/Notion export.
 
 ---
 
@@ -37,7 +38,8 @@ career_agent/
 │
 ├── services/
 │   ├── __init__.py
-│   └── ai_service.py         # Configurable OpenAI service with error handling & logging
+│   ├── ai_service.py         # Configurable OpenAI service with error handling & logging
+│   └── notion_service.py     # Official Notion REST API integration for 1-click sync
 │
 ├── modules/                  # Modular implementations for each feature
 │   ├── __init__.py
@@ -46,7 +48,8 @@ career_agent/
 │   ├── job_matching.py       # Module 3: Fit scoring
 │   ├── interview_coach.py    # Module 4: Mock interviews
 │   ├── career_planner.py     # Module 5: Roadmaps
-│   └── application_tracker.py# Module 6: Application tracking
+│   ├── application_tracker.py# Module 6: Application tracking & export
+│   └── email_writer.py       # Module 7: AI email & cover letter writer
 │
 └── utils/
     ├── __init__.py
@@ -131,10 +134,18 @@ OPENAI_MODEL=meta-llama/llama-3.3-70b-instruct:free
 OPENAI_BASE_URL=https://openrouter.ai/api/v1
 ```
 
-### 6. Run the Application
+### 6. Configure Notion Integration (Optional - 1-Click Sync)
+Add your Notion Integration Secret and Database ID/URL to `.env` or enter them directly inside the web UI:
+```ini
+NOTION_API_KEY=ntn_your_notion_secret_token_here
+NOTION_DATABASE_ID=https://www.notion.so/myworkspace/your_database_id_here
+```
+> **Note**: Don't forget to open your database in Notion, click `...` (top-right) -> `Connect to` -> select your integration name (e.g. `CareerWorkAgent`) to grant access!
+
+### 7. Run the Application
 Launch the Streamlit web dashboard:
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
 ```
 Open your browser at `http://localhost:8501`.
 
@@ -150,8 +161,10 @@ Open your browser at `http://localhost:8501`.
 ## 🗺️ Implementation Roadmap
 - [x] **Phase 1: Project Architecture & Setup** (Foundation, SQLite DB, AI Service Layer, Dashboard Layout)
 - [x] **Phase 2: Application Tracker** (SQLite CRUD operations, status management, pipeline view)
-- [x] **Phase 3: Resume Analyzer** (File parser, prompt templates, ATS scoring)
-- [x] **Phase 4: Job Hunter** (Search query builder, listing capture)
+- [x] **Phase 3: Resume Analyzer** (File parser, prompt templates, ATS scoring & 1-click full rewrite)
+- [x] **Phase 4: Job Hunter** (Search query builder, listing capture & Boolean generator)
 - [x] **Phase 5: Job Matching** (Resume vs. Job Description matching)
 - [x] **Phase 6: Interview Coach** (Interactive mock interview Q&A with evaluation)
 - [x] **Phase 7: Career Planner** (Career goal milestones and learning roadmaps)
+- [x] **Phase 8: Email Writer & Vision JD Scanner** (Job URL fetcher, Facebook poster OCR, 1-click auto-save)
+- [x] **Phase 9: Direct Notion API Integration** (1-Click send cards & email blocks to Notion Database)

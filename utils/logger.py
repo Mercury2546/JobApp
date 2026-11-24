@@ -2,8 +2,10 @@
 Centralized logging configuration for Career Agent.
 Provides console and file logging.
 """
+
 import logging
 import sys
+
 from config.settings import LOG_DIR, LOG_FILE, LOG_LEVEL
 
 
@@ -20,7 +22,7 @@ def setup_logger(name: str = "career_agent") -> logging.Logger:
     # Ensure log directory exists
     try:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
+    except OSError as e:
         sys.stderr.write(f"Warning: Could not create log directory {LOG_DIR}: {e}\n")
 
     # Set root level
@@ -44,7 +46,7 @@ def setup_logger(name: str = "career_agent") -> logging.Logger:
         file_handler.setFormatter(formatter)
         file_handler.setLevel(numeric_level)
         logger.addHandler(file_handler)
-    except Exception as e:
+    except OSError as e:
         sys.stderr.write(f"Warning: Could not attach file handler to {LOG_FILE}: {e}\n")
 
     return logger

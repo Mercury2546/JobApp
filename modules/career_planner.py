@@ -4,10 +4,12 @@
 รองรับการติดตามความคืบหน้ารายหมุดหมาย (Interactive Milestone Checklist)
 และบันทึกเป้าหมายลงในฐานข้อมูล SQLite
 """
+
 import json
 from datetime import date
-from typing import Dict, List, Optional
+
 import streamlit as st
+
 from config.settings import is_openai_configured
 from database.db import get_db_connection
 from services.ai_service import AIServiceError, ai_service
@@ -28,6 +30,7 @@ GOAL_STATUS_LABELS = {
 # ==========================================
 # จัดการฐานข้อมูล SQLite (Database Operations)
 # ==========================================
+
 
 def add_career_goal(
     title: str,
@@ -62,12 +65,12 @@ def add_career_goal(
             new_id = cursor.lastrowid
             logger.info(f"เพิ่มเป้าหมายอาชีพ ID {new_id}: {title} ({target_role})")
             return new_id
-    except Exception as e:
-        logger.error(f"เกิดข้อผิดพลาดในการเพิ่มเป้าหมายอาชีพ: {e}", exc_info=True)
+    except Exception:
+        logger.exception("เกิดข้อผิดพลาดในการเพิ่มเป้าหมายอาชีพ")
         raise
 
 
-def get_all_career_goals() -> List[Dict]:
+def get_all_career_goals() -> list[dict]:
     """ดึงข้อมูลเป้าหมายอาชีพทั้งหมดจาก SQLite"""
     query = "SELECT * FROM career_goals ORDER BY created_at DESC;"
     try:
@@ -76,8 +79,8 @@ def get_all_career_goals() -> List[Dict]:
             cursor.execute(query)
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
-    except Exception as e:
-        logger.error(f"เกิดข้อผิดพลาดในการดึงเป้าหมายอาชีพ: {e}", exc_info=True)
+    except Exception:
+        logger.exception("เกิดข้อผิดพลาดในการดึงเป้าหมายอาชีพ")
         return []
 
 
@@ -89,8 +92,8 @@ def update_goal_milestones(goal_id: int, milestones_json: str) -> bool:
             cursor = conn.cursor()
             cursor.execute(query, (milestones_json, goal_id))
             return cursor.rowcount > 0
-    except Exception as e:
-        logger.error(f"เกิดข้อผิดพลาดในการอัปเดตหมุดหมาย ID {goal_id}: {e}", exc_info=True)
+    except Exception:
+        logger.exception(f"เกิดข้อผิดพลาดในการอัปเดตหมุดหมาย ID {goal_id}")
         raise
 
 
@@ -106,8 +109,8 @@ def update_career_goal_status(goal_id: int, new_status: str) -> bool:
             cursor.execute(query, (new_status, goal_id))
             logger.info(f"เปลี่ยนสถานะเป้าหมาย ID {goal_id} เป็น {new_status}")
             return cursor.rowcount > 0
-    except Exception as e:
-        logger.error(f"เกิดข้อผิดพลาดในการเปลี่ยนสถานะ ID {goal_id}: {e}", exc_info=True)
+    except Exception:
+        logger.exception(f"เกิดข้อผิดพลาดในการเปลี่ยนสถานะ ID {goal_id}")
         raise
 
 
@@ -120,14 +123,15 @@ def delete_career_goal(goal_id: int) -> bool:
             cursor.execute(query, (goal_id,))
             logger.info(f"ลบเป้าหมายอาชีพ ID {goal_id} เรียบร้อย")
             return cursor.rowcount > 0
-    except Exception as e:
-        logger.error(f"ไม่สามารถลบเป้าหมาย ID {goal_id} ได้: {e}", exc_info=True)
+    except Exception:
+        logger.exception(f"ไม่สามารถลบเป้าหมาย ID {goal_id} ได้")
         raise
 
 
 # ==========================================
 # ตรรกะการสร้างแผนที่เส้นทางอาชีพด้วย AI
 # ==========================================
+
 
 def generate_career_roadmap_with_ai(
     current_role: str,
@@ -178,28 +182,48 @@ def generate_career_roadmap_with_ai(
 # หน้าจอแสดงผล (Streamlit UI Views)
 # ==========================================
 
+
 def render_roadmap_generator():
     """หน้าจอให้ AI สร้างแผนที่เส้นทางสายอาชีพ"""
     st.subheader("📈 สร้างแผนที่เส้นทางสายอาชีพด้วย AI (AI Roadmap Generator)")
     st.write("วางแผนการเปลี่ยนผ่านสายอาชีพ หรือการขยับขั้นสู่ตำแหน่งที่สูงขึ้นอย่างมีแบบแผนและวัดผลได้จริง")
 
     if not is_openai_configured():
-        st.warning("⚠️ **ยังไม่ได้ตั้งค่า OpenAI API Key** โปรดระบุคีย์ใน `.env` เพื่อให้ AI สามารถสร้างแผนงานได้")
+        st.warning(
+            "⚠️ **ยังไม่ได้ตั้งค่า OpenAI API Key** โปรดระบุคีย์ใน `.env` เพื่อให้ AI สามารถสร้างแผนงานได้"
+        )
 
     col1, col2 = st.columns(2)
     with col1:
-        current_role = st.text_input("ตำแหน่งงานปัจจุบันของคุณ *", placeholder="เช่น Junior Backend Developer", value="Junior Developer")
-        target_role = st.text_input("ตำแหน่งงานเป้าหมายในอนาคต *", placeholder="เช่น Tech Lead / Senior Cloud Architect", value="Senior Software Engineer")
+        current_role = st.text_input(
+            "ตำแหน่งงานปัจจุบันของคุณ *",
+            placeholder="เช่น Junior Graphic Designer / UX Designer",
+            value=st.session_state.get("shared_role") or "Graphic Designer",
+        )
+        target_role = st.text_input(
+            "ตำแหน่งงานเป้าหมายในอนาคต *",
+            placeholder="เช่น Senior UX/UI Designer / Product Design Lead",
+            value="Senior UX/UI Designer",
+        )
     with col2:
         timeframe = st.selectbox(
             "กรอบระยะเวลาเป้าหมาย",
             [6, 12, 18, 24, 36],
             index=1,
-            format_func=lambda m: f"{m} เดือน ({m // 12} ปี {m % 12} เดือน)" if m >= 12 else f"{m} เดือน",
+            format_func=lambda m: (
+                f"{m} เดือน ({m // 12} ปี {m % 12} เดือน)" if m >= 12 else f"{m} เดือน"
+            ),
         )
-        current_skills = st.text_input("ทักษะและความเชี่ยวชาญปัจจุบัน", placeholder="เช่น Python, Git, SQL, Flask")
+        current_skills = st.text_input(
+            "ทักษะและความเชี่ยวชาญปัจจุบัน",
+            placeholder="เช่น Figma, Adobe Illustrator, Photoshop, Design System",
+        )
 
-    if st.button("🚀 สร้างแผนที่เส้นทางอาชีพ (Generate Roadmap)", type="primary", use_container_width=True):
+    if st.button(
+        "🚀 สร้างแผนที่เส้นทางอาชีพ (Generate Roadmap)",
+        type="primary",
+        use_container_width=True,
+    ):
         if not current_role.strip() or not target_role.strip():
             st.error("กรุณาระบุทั้งตำแหน่งงานปัจจุบันและตำแหน่งเป้าหมาย")
         else:
@@ -221,25 +245,32 @@ def render_roadmap_generator():
                 except AIServiceError as e:
                     st.error(f"เกิดข้อผิดพลาดจาก AI Service: {e}")
                 except Exception as e:
-                    logger.error(f"เกิดข้อผิดพลาด: {e}", exc_info=True)
+                    logger.exception("เกิดข้อผิดพลาด")
                     st.error(f"เกิดข้อผิดพลาด: {e}")
 
     # แสดงผล Roadmap ล่าสุด
     if "generated_roadmap" in st.session_state:
         road = st.session_state["generated_roadmap"]
         st.divider()
-        st.subheader(f"🗺️ แผนที่เส้นทาง: จาก {road['current_role']} สู่ {road['target_role']} ({road['timeframe']} เดือน)")
+        st.subheader(
+            f"🗺️ แผนที่เส้นทาง: จาก {road['current_role']} สู่ {road['target_role']} ({road['timeframe']} เดือน)"
+        )
         st.markdown(road["content"])
 
         # ปุ่มบันทึกเป็นเป้าหมายใน SQLite
         st.write("---")
-        if st.button("💾 บันทึกแผนนี้เข้าสู่ 'เป้าหมายของฉัน' เพื่อติดตามผล", use_container_width=True):
+        if st.button(
+            "💾 บันทึกแผนนี้เข้าสู่ 'เป้าหมายของฉัน' เพื่อติดตามผล", use_container_width=True
+        ):
             # สร้าง Default Checklist เบื้องต้น 4 ข้อ
             default_milestones = [
                 {"title": f"ศึกษาทักษะหลักของตำแหน่ง {road['target_role']}", "done": False},
                 {"title": "สร้างผลงานหรือโปรเจกต์ต้นแบบชิ้นที่ 1", "done": False},
                 {"title": "รับผิดชอบงานหรือโปรเจกต์ที่ซับซ้อนขึ้นในที่ทำงานเดิม", "done": False},
-                {"title": f"ปรับปรุงเรซูเม่และเริ่มสมัครตำแหน่ง {road['target_role']}", "done": False},
+                {
+                    "title": f"ปรับปรุงเรซูเม่และเริ่มสมัครตำแหน่ง {road['target_role']}",
+                    "done": False,
+                },
             ]
             goal_id = add_career_goal(
                 title=f"ขยับสู่ {road['target_role']}",
@@ -249,7 +280,9 @@ def render_roadmap_generator():
                 milestones_json=json.dumps(default_milestones, ensure_ascii=False),
                 notes=road["content"],
             )
-            st.success(f"บันทึกเป้าหมายเรียบร้อยแล้ว (รหัสเป้าหมาย #{goal_id})! สามารถตรวจสอบและติ๊ก Checklist ได้ที่แท็บ 'เป้าหมายและความคืบหน้า'")
+            st.success(
+                f"บันทึกเป้าหมายเรียบร้อยแล้ว (รหัสเป้าหมาย #{goal_id})! สามารถตรวจสอบและติ๊ก Checklist ได้ที่แท็บ 'เป้าหมายและความคืบหน้า'"
+            )
 
 
 def render_my_goals_view():
@@ -258,7 +291,9 @@ def render_my_goals_view():
     goals = get_all_career_goals()
 
     if not goals:
-        st.info("ยังไม่มีเป้าหมายที่บันทึกไว้ สามารถสร้างเป้าหมายใหม่ได้ที่แท็บ 'สร้างแผนที่ด้วย AI' หรือ 'เพิ่มเป้าหมายด้วยตนเอง'")
+        st.info(
+            "ยังไม่มีเป้าหมายที่บันทึกไว้ สามารถสร้างเป้าหมายใหม่ได้ที่แท็บ 'สร้างแผนที่ด้วย AI' หรือ 'เพิ่มเป้าหมายด้วยตนเอง'"
+        )
         return
 
     st.write(f"พบเป้าหมายทั้งหมด **{len(goals)}** รายการ")
@@ -269,7 +304,7 @@ def render_my_goals_view():
             milestones = json.loads(goal["milestones_json"])
             if not isinstance(milestones, list):
                 milestones = []
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             milestones = []
 
         total_m = len(milestones)
@@ -278,14 +313,31 @@ def render_my_goals_view():
 
         status_label = GOAL_STATUS_LABELS.get(goal["status"], goal["status"])
 
-        with st.expander(f"🏆 **{goal['title']}** — {goal['target_role']} [{status_label}] (ความคืบหน้า {progress_pct}%)", expanded=True):
+        with st.expander(
+            f"🏆 **{goal['title']}** — {goal['target_role']} [{status_label}] (ความคืบหน้า {progress_pct}%)",
+            expanded=True,
+        ):
             col1, col2 = st.columns([3, 1])
             with col1:
-                st.write(f"**เป้าหมาย:** {goal['target_role']} • **บันทึกเมื่อ:** {format_date(goal['created_at'][:10])}")
-                st.progress(progress_pct / 100.0, text=f"ความสำเร็จ {done_m}/{total_m} หมุดหมาย ({progress_pct}%)")
+                created_date = (
+                    format_date(goal["created_at"][:10])
+                    if goal.get("created_at")
+                    else "ไม่ระบุ"
+                )
+                st.write(
+                    f"**เป้าหมาย:** {goal['target_role']} • **บันทึกเมื่อ:** {created_date}"
+                )
+                st.progress(
+                    progress_pct / 100.0,
+                    text=f"ความสำเร็จ {done_m}/{total_m} หมุดหมาย ({progress_pct}%)",
+                )
             with col2:
                 # ตัวเลือกเปลี่ยนสถานะ
-                current_st_idx = GOAL_STATUSES.index(goal["status"]) if goal["status"] in GOAL_STATUSES else 0
+                current_st_idx = (
+                    GOAL_STATUSES.index(goal["status"])
+                    if goal["status"] in GOAL_STATUSES
+                    else 0
+                )
                 new_st = st.selectbox(
                     "สถานะเป้าหมาย",
                     GOAL_STATUSES,
@@ -299,7 +351,7 @@ def render_my_goals_view():
 
                 if st.button("🗑️ ลบเป้าหมายนี้", key=f"del_goal_{goal['id']}"):
                     delete_career_goal(goal["id"])
-                    st.success("ลบเป้าหมายเรียบร้อยแล้ว")
+                    st.toast("🗑️ ลบเป้าหมายเรียบร้อยแล้ว")
                     st.rerun()
 
             st.divider()
@@ -320,11 +372,15 @@ def render_my_goals_view():
                         updated = True
 
                 if updated:
-                    update_goal_milestones(goal["id"], json.dumps(milestones, ensure_ascii=False))
+                    update_goal_milestones(
+                        goal["id"], json.dumps(milestones, ensure_ascii=False)
+                    )
                     st.rerun()
 
             if goal["notes"]:
-                with st.expander("📖 ดูรายละเอียดเนื้อหาแผนงาน (Roadmap Notes)", expanded=False):
+                with st.expander(
+                    "📖 ดูรายละเอียดเนื้อหาแผนงาน (Roadmap Notes)", expanded=False
+                ):
                     st.markdown(goal["notes"])
 
 
@@ -336,18 +392,30 @@ def render_manual_goal_form():
     with st.form("manual_goal_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
-            title = st.text_input("ชื่อเป้าหมาย *", placeholder="เช่น เลื่อนขั้นเป็น Senior Software Engineer")
-            target_role = st.text_input("ตำแหน่งงานที่มุ่งหวัง *", placeholder="เช่น Senior Software Engineer")
+            title = st.text_input(
+                "ชื่อเป้าหมาย *", placeholder="เช่น เลื่อนขั้นเป็น Senior UX/UI Designer"
+            )
+            target_role = st.text_input(
+                "ตำแหน่งงานที่มุ่งหวัง *",
+                placeholder="เช่น Senior UX/UI Designer, Lead Product Designer",
+            )
         with col2:
             target_date = st.date_input("วันที่ตั้งเป้าหมายจะทำให้สำเร็จ", value=date.today())
-            status = st.selectbox("สถานะเริ่มต้น", GOAL_STATUSES, format_func=lambda s: GOAL_STATUS_LABELS.get(s, s), index=0)
+            status = st.selectbox(
+                "สถานะเริ่มต้น",
+                GOAL_STATUSES,
+                format_func=lambda s: GOAL_STATUS_LABELS.get(s, s),
+                index=0,
+            )
 
         milestone_inputs = st.text_area(
             "หมุดหมายย่อย (พิมพ์ทีละบรรทัด)",
             placeholder="เรียนคอร์ส System Design ให้จบ\nสร้างโปรเจกต์ Microservices บน AWS\nขอรับฟีดแบ็กจากหัวหน้าทีม\nยื่นประเมินผลงานปลายปี",
             height=140,
         )
-        notes = st.text_area("บันทึกเพิ่มเติมหรือแผนปฏิบัติการ", placeholder="คำสัญญาต่อตนเอง ทรัพยากรที่จะใช้...")
+        notes = st.text_area(
+            "บันทึกเพิ่มเติมหรือแผนปฏิบัติการ", placeholder="คำสัญญาต่อตนเอง ทรัพยากรที่จะใช้..."
+        )
 
         submitted = st.form_submit_button("💾 บันทึกเป้าหมายใหม่", use_container_width=True)
 
@@ -356,7 +424,11 @@ def render_manual_goal_form():
                 st.error("กรุณาระบุทั้งชื่อเป้าหมายและตำแหน่งงานที่มุ่งหวัง")
             else:
                 # แปลงข้อความหมุดหมายทีละบรรทัดเป็น JSON List
-                lines = [line.strip() for line in milestone_inputs.split("\n") if line.strip()]
+                lines = [
+                    line.strip()
+                    for line in milestone_inputs.split("\n")
+                    if line.strip()
+                ]
                 milestones_list = [{"title": line, "done": False} for line in lines]
 
                 try:
@@ -368,9 +440,9 @@ def render_manual_goal_form():
                         milestones_json=json.dumps(milestones_list, ensure_ascii=False),
                         notes=notes,
                     )
-                    st.success(f"🎉 บันทึกเป้าหมาย #{new_id} เรียบร้อยแล้ว!")
+                    st.toast(f"🎉 บันทึกเป้าหมาย #{new_id} เรียบร้อยแล้ว!")
                     st.rerun()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 — show DB error in UI
                     st.error(f"เกิดข้อผิดพลาดในการบันทึกเป้าหมาย: {e}")
 
 
@@ -381,11 +453,13 @@ def render():
     st.header("📈 วางแผนเส้นทางสายอาชีพ (Career Planner)")
     st.caption("กำหนดเป้าหมาย วางแผนที่เส้นทางอาชีพด้วย AI และติดตามหมุดหมายความสำเร็จ")
 
-    tab_ai, tab_my_goals, tab_manual = st.tabs([
-        "📈 สร้างแผนที่ด้วย AI (AI Roadmap)",
-        "🎯 เป้าหมายและความคืบหน้า (My Goals)",
-        "➕ เพิ่มเป้าหมายด้วยตนเอง (Manual Entry)",
-    ])
+    tab_ai, tab_my_goals, tab_manual = st.tabs(
+        [
+            "📈 สร้างแผนที่ด้วย AI (AI Roadmap)",
+            "🎯 เป้าหมายและความคืบหน้า (My Goals)",
+            "➕ เพิ่มเป้าหมายด้วยตนเอง (Manual Entry)",
+        ]
+    )
 
     with tab_ai:
         render_roadmap_generator()

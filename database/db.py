@@ -1,11 +1,12 @@
 """
 SQLite Database manager and connection handlers.
 """
+
 import sqlite3
+from collections.abc import Generator
 from contextlib import contextmanager
-from pathlib import Path
-from typing import Generator
-from config.settings import DB_PATH, BASE_DIR
+
+from config.settings import BASE_DIR, DB_PATH
 from utils.logger import setup_logger
 
 logger = setup_logger("database")
@@ -26,14 +27,48 @@ def get_db_connection() -> Generator[sqlite3.Connection, None, None]:
         conn.execute("PRAGMA foreign_keys = ON;")
         yield conn
         conn.commit()
-    except sqlite3.Error as e:
+    except sqlite3.Error:
         if conn:
             conn.rollback()
-        logger.error(f"Database error occurred: {e}", exc_info=True)
+        logger.exception("Database error occurred")
         raise
     finally:
         if conn:
             conn.close()
+
+
+def migrate_db():
+    """
+    Safely adds missing columns to existing tables without data loss.
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(applications);")
+            columns = [row["name"] for row in cursor.fetchall()]
+
+            new_columns = [
+                ("email_subject", "TEXT"),
+                ("email_content", "TEXT"),
+                ("follow_up_date", "TEXT"),
+                ("image_url", "TEXT"),
+            ]
+
+            for col_name, col_type in new_columns:
+                if col_name not in columns:
+                    cursor.execute(
+                        f"ALTER TABLE applications ADD COLUMN {col_name} {col_type};"
+                    )
+                    logger.info(f"Added column {col_name} to applications table.")
+
+            # Migrate resumes table
+            cursor.execute("PRAGMA table_info(resumes);")
+            res_columns = [row["name"] for row in cursor.fetchall()]
+            if "rewritten_text" not in res_columns:
+                cursor.execute("ALTER TABLE resumes ADD COLUMN rewritten_text TEXT;")
+                logger.info("Added column rewritten_text to resumes table.")
+    except sqlite3.Error as e:
+        logger.warning(f"Migration notice: {e}")
 
 
 def init_db() -> bool:
@@ -52,10 +87,13 @@ def init_db() -> bool:
         with get_db_connection() as conn:
             conn.executescript(schema_sql)
 
+        # Run safe migrations for existing installations
+        migrate_db()
+
         logger.info(f"Database initialized successfully at: {DB_PATH}")
         return True
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Failed to initialize database")
         raise
 
 
@@ -69,6 +107,6 @@ def check_db_health() -> bool:
             cursor.execute("SELECT 1;")
             result = cursor.fetchone()
             return result is not None and result[0] == 1
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Database health check failed: {e}")
         return False

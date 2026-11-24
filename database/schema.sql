@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS applications (
     job_url TEXT,
     status TEXT NOT NULL DEFAULT 'Wishlist' CHECK(status IN ('Wishlist', 'Applied', 'Interviewing', 'Offered', 'Rejected')),
     applied_date TEXT,
+    email_subject TEXT,
+    email_content TEXT,
+    follow_up_date TEXT,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -22,6 +25,7 @@ CREATE TABLE IF NOT EXISTS resumes (
     raw_text TEXT,
     file_name TEXT,
     analysis_summary TEXT,
+    rewritten_text TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
