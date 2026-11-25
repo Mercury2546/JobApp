@@ -462,13 +462,16 @@ def render_pipeline_view():
                 st.caption("ยังไม่มีรายการในขั้นตอนนี้")
             else:
                 for app in apps_in_stage:
+                    is_light_theme = st.session_state.get("app_theme") == "light"
+                    company_color = "#0F172A" if is_light_theme else "#FFFFFF"
+                    role_color = "#4338CA" if is_light_theme else "#A5B4FC"
                     with st.container(border=True):
                         st.markdown(
-                            f"<div style='font-size: 15px; font-weight: 700; color: #FFFFFF;'>{app['company']}</div>",
+                            f"<div style='font-size: 15px; font-weight: 700; color: {company_color};'>{app['company']}</div>",
                             unsafe_allow_html=True,
                         )
                         st.markdown(
-                            f"<div style='font-size: 13px; font-weight: 600; color: #A5B4FC; margin-bottom: 6px;'>💼 {app['role']}</div>",
+                            f"<div style='font-size: 13px; font-weight: 600; color: {role_color}; margin-bottom: 6px;'>💼 {app['role']}</div>",
                             unsafe_allow_html=True,
                         )
 

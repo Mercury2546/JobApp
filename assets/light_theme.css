@@ -233,7 +233,12 @@ button[kind="primary"]:hover, .stButton > button[kind="primary"]:hover {
     transform: translateY(-1px) !important;
 }
 
-button[kind="secondary"], .stButton > button[kind="secondary"], .stButton > button {
+button[kind="secondary"],
+.stButton > button[kind="secondary"],
+.stButton > button,
+div[data-testid="stFormSubmitButton"] button,
+div[data-testid="stLinkButton"] a,
+a[kind="secondary"] {
     background: #FFFFFF !important;
     border: 1.5px solid #CBD5E1 !important;
     color: #1E293B !important;
@@ -244,10 +249,24 @@ button[kind="secondary"], .stButton > button[kind="secondary"], .stButton > butt
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
+button[kind="secondary"] p,
+.stButton > button p,
+div[data-testid="stFormSubmitButton"] button p,
+div[data-testid="stLinkButton"] a p,
+a[kind="secondary"] p {
+    color: #1E293B !important;
+}
+
 button[kind="secondary"]:hover,
 .stButton > button:hover,
 button[kind="secondary"]:hover p,
-.stButton > button:hover p {
+.stButton > button:hover p,
+div[data-testid="stFormSubmitButton"] button:hover,
+div[data-testid="stFormSubmitButton"] button:hover p,
+div[data-testid="stLinkButton"] a:hover,
+div[data-testid="stLinkButton"] a:hover p,
+a[kind="secondary"]:hover,
+a[kind="secondary"]:hover p {
     background: #F8FAFC !important;
     border-color: #818CF8 !important;
     color: #4338CA !important;
@@ -437,16 +456,74 @@ div[data-testid="stRadio"] label span {
     cursor: pointer !important;
 }
 
+label[data-testid="stRadioOption"] > div > div:first-child,
+label[data-testid="stRadioOption"] > div > div:first-child > div {
+    background-color: #FFFFFF !important;
+    border-color: #94A3B8 !important;
+}
+
+label[data-testid="stRadioOption"] > div > div:first-child {
+    border: 2px solid #94A3B8 !important;
+}
+
+label[data-testid="stRadioOption"][data-selected="true"] > div > div:first-child,
+label[data-testid="stRadioOption"]:has(input:checked) > div > div:first-child {
+    background-color: #4F46E5 !important;
+    border-color: #4F46E5 !important;
+}
+
+label[data-testid="stRadioOption"][data-selected="true"] > div > div:first-child > div,
+label[data-testid="stRadioOption"]:has(input:checked) > div > div:first-child > div {
+    background-color: #FFFFFF !important;
+}
+
+div[data-testid="stCheckbox"] label > div:first-child {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: 2px solid #94A3B8 !important;
+}
+
+div[data-testid="stCheckbox"] label > div:first-child::before,
+div[data-testid="stCheckbox"] label > div:first-child::after {
+    background: transparent !important;
+}
+
+div[data-testid="stCheckbox"] label[data-selected="true"] > div:first-child,
+div[data-testid="stCheckbox"] label:has(input:checked) > div:first-child {
+    background: #4F46E5 !important;
+    background-color: #4F46E5 !important;
+    border-color: #4F46E5 !important;
+}
+
 /* File Uploader */
-div[data-testid="stFileUploader"] {
+div[data-testid="stFileUploader"],
+section[data-testid="stFileUploaderDropzone"],
+div[data-testid="stFileUploader"] section,
+[data-testid="stFileUploaderDropzone"] {
     background: #FFFFFF !important;
     border: 2px dashed #CBD5E1 !important;
     border-radius: 14px !important;
+    color: #1E293B !important;
 }
 
-div[data-testid="stFileUploader"]:hover {
+div[data-testid="stFileUploaderDropzone"] *,
+section[data-testid="stFileUploaderDropzone"] * {
+    color: #1E293B !important;
+}
+
+div[data-testid="stFileUploader"]:hover,
+section[data-testid="stFileUploaderDropzone"]:hover {
     border-color: #818CF8 !important;
-    background: #EEF2FF !important;
+    background: #F8FAFC !important;
+}
+
+section[data-testid="stFileUploaderDropzone"] button,
+div[data-testid="stFileUploader"] section button {
+    background: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
+    color: #1E293B !important;
 }
 
 /* --- 8. Tabs --- */
@@ -479,6 +556,15 @@ button[data-baseweb="tab"][aria-selected="true"] {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
 }
 
+/* Tab overflow scroll arrows */
+div[data-testid="stTabs"] button[aria-label*="Scroll"],
+div[data-baseweb="tab-list"] button:not([role="tab"]) {
+    background: #FFFFFF !important;
+    color: #334155 !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+}
+
 /* Expanders */
 div[data-testid="stExpander"] {
     background: #FFFFFF !important;
@@ -491,12 +577,22 @@ div[data-testid="stExpander"]:hover {
     border-color: #CBD5E1 !important;
 }
 
+div[data-testid="stExpander"] details,
 div[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] summary:hover,
+div[data-testid="stExpander"] summary[aria-expanded="true"],
 summary[data-testid="stExpanderToggle"] {
+    background: #FFFFFF !important;
     color: #0F172A !important;
     font-size: 18px !important;
     font-weight: 700 !important;
     padding: 12px 16px !important;
+}
+
+div[data-testid="stDataFrame"] {
+    filter: invert(0.93) hue-rotate(180deg);
+    border-radius: 10px !important;
+    overflow: hidden !important;
 }
 
 /* Code blocks, Tables & Alerts in Light Mode */
@@ -532,11 +628,31 @@ table, .stMarkdown table {
     border-bottom: 1px solid #E2E8F0 !important;
 }
 
-div[data-testid="stAlert"] {
-    background: #F8FAFC !important;
+div[data-testid="stAlert"],
+div[data-testid="stAlert"] > div,
+div[data-testid="stAlertContainer"],
+div[role="alert"] {
+    background: #F1F5F9 !important;
     border: 1px solid #CBD5E1 !important;
     color: #1E293B !important;
     border-radius: 12px !important;
+}
+
+div[data-testid="stAlert"] p,
+div[role="alert"] p {
+    color: #1E293B !important;
+}
+
+div[data-testid="stFileUploaderDropzone"] {
+    background: #FFFFFF !important;
+    border: 1.5px dashed #CBD5E1 !important;
+    color: #1E293B !important;
+}
+
+div[data-baseweb="popover"] > div,
+ul[data-testid="stSelectboxVirtualDropdown"] {
+    background: #FFFFFF !important;
+    color: #1E293B !important;
 }
 
 /* --- 9. Hero Banner in Light Mode --- */
